@@ -4,7 +4,6 @@ import type React from "react";
 import {
   Package,
   ShoppingCart,
- 
   Tag,
   Monitor,
   FileText,
@@ -15,6 +14,12 @@ import {
   Settings,
   HelpCircle,
   ChevronDown,
+  BarChart2,
+  MessageSquare,
+  Plus,
+  BookOpen,
+  LayoutGridIcon,
+  AlignJustify,
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -68,6 +73,92 @@ interface MenuSection {
 // You can expand this menu data later
 const menuData: MenuSection[] = [
   {
+    id: "dashboard",
+    label: "Dashboard",
+    items: [
+      {
+        id: "dashboard",
+        label: "Dashboard",
+        href: "/admin/dashboard",
+        icon: Package,
+        children: [
+          {
+            id: "overview",
+            label: "Overview",
+            href: "/dashboard/overview",
+            icon: BarChart2,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "blog",
+    label: "Blog",
+    items: [
+      {
+        id: "blogs",
+        label: "Blogs",
+        href: "/admin/blog",
+        icon: BookOpen,
+        children: [
+          {
+            id: "all-blogs",
+            label: "All Blog",
+            href: "/admin/blog",
+            icon: AlignJustify,
+          },
+          {
+            id: "add-blog",
+            label: "Add Blog",
+            href: "/admin/blog/add",
+            icon: Plus,
+          },
+        ],
+      },
+      {
+        id: "blogcategories",
+        label: "Blogs Category",
+        icon: LayoutGridIcon,
+        children: [
+          {
+            id: "blogcategories",
+            label: "All Category",
+            href: "/admin/blog/categories",
+            icon: AlignJustify,
+          },
+          {
+            id: "blogcategories",
+            label: "Add Category",
+            href: "/admin/blog/categories/add",
+            icon: Plus,
+          },
+        ],
+      },
+      {
+        id: "blog-reviews",
+        label: "Blog Reviews",
+
+        icon: MessageSquare,
+        children: [
+          {
+            id: "all-blog-reviews",
+            label: "All Review",
+            href: "/admin/blog/reviews",
+            icon: AlignJustify,
+          },
+           {
+            id: "new-blog-reviews",
+            label: "Add New Review",
+            href: "/admin/blog/reviews/add",
+            icon: Plus,
+          },
+        ],
+      },
+    ],
+  },
+
+  {
     id: "ecommerce",
     label: "E-commerce",
     items: [
@@ -109,8 +200,6 @@ const menuData: MenuSection[] = [
               },
             ],
           },
-        
-          
         ],
       },
       {
@@ -153,7 +242,6 @@ const menuData: MenuSection[] = [
           },
         ],
       },
-      
     ],
   },
 ];
@@ -240,7 +328,13 @@ export default function Sidebar() {
       delete window.setIsMobileMenuOpen;
       delete window.setMenuStateFromCustomizer;
     };
-  }, [menuState, isHovered, isMobile, isMobileMenuOpen, setMenuStateFromCustomizer]);
+  }, [
+    menuState,
+    isHovered,
+    isMobile,
+    isMobileMenuOpen,
+    setMenuStateFromCustomizer,
+  ]);
 
   const handleNavigation = () => {
     if (isMobile) {
@@ -491,8 +585,7 @@ export default function Sidebar() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 w-full"
               >
-              
-               <Image
+                <Image
                   src="/logo.jpg"
                   alt="Admin"
                   width={32}
@@ -505,7 +598,6 @@ export default function Sidebar() {
               </Link>
             ) : (
               <div className="flex justify-center w-full">
-              
                 <Image
                   src="/logo.jpg"
                   alt="Admin"

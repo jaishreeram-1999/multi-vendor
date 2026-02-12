@@ -124,3 +124,12 @@
     @apply bg-background text-foreground;
   }
 }
+
+.ToastRoot[data-state="open"] {
+  animation: slideIn 300ms ease-out forwards;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
