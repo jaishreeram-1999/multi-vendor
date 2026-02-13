@@ -3,14 +3,6 @@
 import type React from "react";
 import {
   Package,
-  ShoppingCart,
-  Tag,
-  Monitor,
-  FileText,
-  Clock,
-  Timer,
-  Truck,
-  Check,
   Settings,
   HelpCircle,
   ChevronDown,
@@ -20,6 +12,8 @@ import {
   BookOpen,
   LayoutGridIcon,
   AlignJustify,
+  ShoppingCart,
+  FolderTree,
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -92,6 +86,50 @@ const menuData: MenuSection[] = [
       },
     ],
   },
+
+  {
+    id: "ecommerce",
+    label: "E-commerce",
+    items: [
+      {
+        id: "products",
+        label: "Products",
+        href: "/products",
+        icon: ShoppingCart,
+        children: [
+          {
+            id: "all-products",
+            label: "All Products",
+            href: "/admin/products/",
+            icon: AlignJustify,
+          },
+        ],
+      },
+      
+      {
+        id: "categories",
+        label: "Categories",
+        icon: FolderTree,
+        children: [
+          {
+            id: "all-categories",
+            label: "All Categories",
+            href: "/admin/categories/",
+            icon: AlignJustify,
+          },
+          {
+            id: "add-new-category",
+            label: "Add New Category",
+            href: "/admin/categories/add",
+            icon: Plus,
+          },
+        ],
+      },
+
+      
+    ],
+  },
+
   {
     id: "blog",
     label: "Blog",
@@ -147,98 +185,11 @@ const menuData: MenuSection[] = [
             href: "/admin/blog/reviews",
             icon: AlignJustify,
           },
-           {
+          {
             id: "new-blog-reviews",
             label: "Add New Review",
             href: "/admin/blog/reviews/add",
             icon: Plus,
-          },
-        ],
-      },
-    ],
-  },
-
-  {
-    id: "ecommerce",
-    label: "E-commerce",
-    items: [
-      {
-        id: "products",
-        label: "Products",
-        href: "/products",
-        icon: Package,
-        children: [
-          {
-            id: "all-products",
-            label: "All Products",
-            href: "/products/all",
-            icon: Package,
-          },
-          {
-            id: "categories",
-            label: "Categories",
-            href: "/products/categories",
-            icon: Tag,
-            children: [
-              {
-                id: "electronics",
-                label: "Electronics",
-                href: "/products/categories/electronics",
-                icon: Monitor,
-              },
-              {
-                id: "clothing",
-                label: "Clothing",
-                href: "/products/categories/clothing",
-                icon: ShoppingCart,
-              },
-              {
-                id: "books",
-                label: "Books",
-                href: "/products/categories/books",
-                icon: FileText,
-              },
-            ],
-          },
-        ],
-      },
-      {
-        id: "orders",
-        label: "Orders",
-        href: "/orders",
-        icon: ShoppingCart,
-        badge: "5",
-        children: [
-          {
-            id: "all-orders",
-            label: "All Orders",
-            href: "/orders/all",
-            icon: ShoppingCart,
-          },
-          {
-            id: "pending",
-            label: "Pending",
-            href: "/orders/pending",
-            icon: Clock,
-            badge: "3",
-          },
-          {
-            id: "processing",
-            label: "Processing",
-            href: "/orders/processing",
-            icon: Timer,
-          },
-          {
-            id: "shipped",
-            label: "Shipped",
-            href: "/orders/shipped",
-            icon: Truck,
-          },
-          {
-            id: "delivered",
-            label: "Delivered",
-            href: "/orders/delivered",
-            icon: Check,
           },
         ],
       },
