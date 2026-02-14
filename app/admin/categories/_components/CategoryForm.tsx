@@ -280,7 +280,7 @@ export function CategoryForm({ categoryId, initialData }: CategoryFormProps) {
             type="submit"
             disabled={isSubmitting}
             onClick={form.handleSubmit(onSubmit)}
-            className="min-w-[140px]"
+            className="min-w-35"
           >
             {isSubmitting ? (
               <>
@@ -479,7 +479,7 @@ export function CategoryForm({ categoryId, initialData }: CategoryFormProps) {
                             <SelectValue placeholder="Select Parent" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="max-h-[300px] overflow-y-auto">
+                        <SelectContent className="max-h-75 overflow-y-auto">
                           <SelectItem value="none">
                             Top-level Category
                           </SelectItem>

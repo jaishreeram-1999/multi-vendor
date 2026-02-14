@@ -6,7 +6,7 @@ import { ICategory } from "@/types/category.types";
 import { useRouter, useParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {  CardDescription, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, ArrowLeft, Edit2, Trash2, Globe, Info, ImageIcon, Calendar } from "lucide-react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
@@ -283,7 +283,7 @@ export default function ViewCategoryPage() {
             <AlertDialogAction
               onClick={handleDelete}
               disabled={deleting}
-              className="bg-destructive hover:bg-destructive/90 min-w-[140px]"
+              className="bg-destructive hover:bg-destructive/90 min-w-35"
             >
               {deleting ? (
                 <>

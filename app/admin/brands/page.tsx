@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Loader2Icon } from "lucide-react";
 import {
@@ -21,25 +22,18 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { DeleteAlertDialog } from "@/app/admin/brands/_components/delete-alert-dialog";
+import { DeleteAlertDialog } from "./_components/delete-alert-dialog";
 import Link from "next/link";
 import Image from "next/image";
+import type { Brand, BrandListResponse } from "@/types/brands.types";
 
-interface Brand {
-  _id: string;
-  name: string;
-  description: string;
-  icon: string;
-  isActive: boolean;
-  createdAt: string;
-}
-
-export default function BrandsPage() {
+export default function BrandsPage(): React.ReactElement {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const limit = 10;
   const { toast } = useToast();
 
@@ -47,70 +41,70 @@ export default function BrandsPage() {
     open: boolean;
     brand: Brand | null;
   }>({ open: false, brand: null });
-
-  // 1. Ek nayi state add karein local input handle karne ke liye
-  const [searchInput, setSearchInput] = useState("");
-
-  // 2. Fetch function mein 'searchQuery' use karein
-  const fetchBrands = async () => {
-    setLoading(true);
-    try {
-      // API call mein ab hum searchQuery bhejenge jo button click par update hogi
-      const response = await fetch(
-        `/api/admin/brands?page=${page}&limit=${limit}&search=${searchQuery}`,
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setBrands(data.brands);
-        setTotalPages(data.totalPages);
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch brands",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 3. Search handle karne ka function
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
-    setSearchQuery(searchInput); // Main state update hogi aur useEffect chalega
-    setPage(1); // Search ke baad hamesha page 1 par jayein
+    setSearchQuery(searchInput);
+    setPage(1);
   };
 
-  // 4. useEffect waise hi rahega
-  useEffect(() => {
-    fetchBrands();
-  }, [page, searchQuery]);
 
-  const handleDelete = async () => {
-    if (!deleteDialog.brand) return;
+// 1. fetchBrands ko useCallback mein wrap karein
+const fetchBrands = useCallback(async (): Promise<void> => {
+  setLoading(true);
+  try {
+    const response = await axios.get<BrandListResponse>(
+      "/api/admin/brands",
+      {
+        params: {
+          page,
+          limit,
+          search: searchQuery,
+        },
+      }
+    );
+    setBrands(response.data.brands);
+    setTotalPages(response.data.totalPages);
+  } catch (error) {
+    const errorMessage =
+      axios.isAxiosError(error) && error.response?.data?.message
+        ? String(error.response.data.message)
+        : "Failed to fetch brands";
+    toast({
+      title: "Error",
+      description: errorMessage,
+      variant: "destructive",
+    });
+  } finally {
+    setLoading(false);
+  }
+}, [page, limit, searchQuery, toast]); // Saari values jinpe function depend karta hai
+
+// 2. useEffect ab sirf fetchBrands pe depend karega
+useEffect(() => {
+  fetchBrands();
+}, [fetchBrands]); // Clean and safe dependency
+
+
+ 
+
+  const handleDelete = async (): Promise<void> => {
+    if (!deleteDialog.brand?._id) return;
 
     try {
-      const response = await fetch(
-        `/api/admin/brands/${deleteDialog.brand._id}`,
-        {
-          method: "DELETE",
-        },
-      );
-
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: "Brand deleted successfully",
-        });
-        fetchBrands();
-      } else {
-        throw new Error("Failed to delete brand");
-      }
+      await axios.delete(`/api/admin/brands/${deleteDialog.brand._id}`);
+      toast({
+        title: "Success",
+        description: "Brand deleted successfully",
+      });
+      fetchBrands();
     } catch (error) {
+      const errorMessage =
+        axios.isAxiosError(error) && error.response?.data?.message
+          ? String(error.response.data.message)
+          : "Failed to delete brand";
       toast({
         title: "Error",
-        description: "Failed to delete brand",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -118,18 +112,16 @@ export default function BrandsPage() {
     }
   };
 
-  const filteredBrands = brands.filter((brand) =>
-    brand.name.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
-
-    if (loading) {
-  return (
-    <div className="flex h-[60vh] w-full flex-col items-center justify-center gap-2">
-      <Loader2Icon className="h-10 w-10 animate-spin text-primary" />
-      <p className="text-sm font-medium text-muted-foreground">Loading brands...</p>
-    </div>
-  )
-}
+  if (loading && brands.length === 0) {
+    return (
+      <div className="flex h-[60vh] w-full flex-col items-center justify-center gap-2">
+        <Loader2Icon className="h-10 w-10 animate-spin text-primary" />
+        <p className="text-sm font-medium text-muted-foreground">
+          Loading brands...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 p-2">
@@ -149,7 +141,9 @@ export default function BrandsPage() {
       <Card>
         <CardHeader>
           <CardTitle>All Brands</CardTitle>
-          <CardDescription>A list of all brands in your store</CardDescription>
+          <CardDescription>
+            A list of all brands in your store
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {/* Search Section */}
@@ -164,7 +158,7 @@ export default function BrandsPage() {
             <Button type="submit" variant="default">
               Search
             </Button>
-            {/* Clear Button (Optional) */}
+            {/* Clear Button */}
             {searchQuery && (
               <Button
                 type="button"
@@ -191,56 +185,69 @@ export default function BrandsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredBrands?.map((brand) => (
-                <TableRow key={brand._id}>
-                  <TableCell>
-                    {brand.icon ? (
-                      <Image
-                        src={brand.icon || "/placeholder.svg"}
-                        alt={brand.name}
-                        width={32}
-                        height={32}
-                        className="rounded-md"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 bg-gray-200 rounded-md flex items-center justify-center">
-                        <ImageIcon className="h-4 w-4 text-gray-400" />
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell className="font-medium">{brand.name}</TableCell>
-                  <TableCell>{brand.description}</TableCell>
-                  <TableCell>
-                    <Badge variant={brand.isActive ? "default" : "secondary"}>
-                      {brand.isActive ? "Active" : "Inactive"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(brand.createdAt).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm" asChild>
-                        <Link href={`/admin/brands/${brand._id}/edit`}>
-                          <Edit className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setDeleteDialog({ open: true, brand })}
+              {brands && brands.length > 0 ? (
+                brands.map((brand) => (
+                  <TableRow key={brand._id}>
+                    <TableCell>
+                      {brand.icon ? (
+                        <Image
+                          src={brand.icon}
+                          alt={brand.name}
+                          width={32}
+                          height={32}
+                          className="rounded-md"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 bg-gray-200 rounded-md flex items-center justify-center">
+                          <ImageIcon className="h-4 w-4 text-gray-400" />
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="font-medium">{brand.name}</TableCell>
+                    <TableCell>{brand.description}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={brand.isActive ? "default" : "secondary"}
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                        {brand.isActive ? "Active" : "Inactive"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {brand.createdAt
+                        ? new Date(brand.createdAt).toLocaleDateString()
+                        : "N/A"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" size="sm" asChild>
+                          <Link href={`/admin/brands/${brand._id}/edit`}>
+                            <Edit className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            setDeleteDialog({ open: true, brand })
+                          }
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center">
+                    <p className="text-muted-foreground">No brands found</p>
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
 
           {/* Pagination Controls */}
-          {/* {brands.length > 10 &&( */}
           <div className="mt-4 flex justify-between items-center">
             <Button
               variant="outline"
@@ -260,7 +267,6 @@ export default function BrandsPage() {
               Next
             </Button>
           </div>
-          {/* )}  */}
         </CardContent>
       </Card>
 

@@ -1,6 +1,6 @@
-import { BrandForm } from "../_components/brand-form"
+import { BrandForm } from "../_components/brand-form";
 
-export default function NewBrandPage() {
+export default function NewBrandPage(): React.JSX.Element {
   return (
     <div className="space-y-6 px-2 py-4">
       <div>
@@ -9,5 +9,5 @@ export default function NewBrandPage() {
       </div>
       <BrandForm />
     </div>
-  )
+  );
 }

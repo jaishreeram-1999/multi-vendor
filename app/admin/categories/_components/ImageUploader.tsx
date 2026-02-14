@@ -148,7 +148,7 @@ export function ImageUploader({
       border border-border 
       rounded-xl 
       overflow-hidden 
-      bg-gradient-to-br from-muted/30 to-muted/10 
+      bg-linear-to-br from-muted/30 to-muted/10 
       shadow-md
     "
   >

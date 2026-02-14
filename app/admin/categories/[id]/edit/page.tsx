@@ -10,10 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 
 
-interface CategoryFormProps {
-  categoryId?: string;
-  initialData?: ICategory | null;
-}
+
 export default function EditCategoryPage() {
   const params = useParams();
   const { toast } = useToast();

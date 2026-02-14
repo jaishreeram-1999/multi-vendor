@@ -1,71 +1,79 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
-import { BrandForm } from "../../_components/brand-form"
-import { useToast } from "@/hooks/use-toast"
-import { Loader2Icon } from "lucide-react"
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { useParams, useRouter } from "next/navigation";
+import { BrandForm } from "../../_components/brand-form";
+import { useToast } from "@/hooks/use-toast";
+import type { Brand } from "@/types/brands.types";
+import { Loader2Icon } from "lucide-react";
 
-interface Brand {
-  _id: string
-  name: string
-  description: string
-  icon: string
-  isActive: boolean
-}
-
-export default function EditBrandPage() {
-  const [brand, setBrand] = useState<Brand | null>(null)
-  const [loading, setLoading] = useState(true)
-  const params = useParams()
-  const { toast } = useToast()
+export default function EditBrandPage(): React.JSX.Element {
+  const params = useParams<{ id: string }>();
+  const router = useRouter();
+  const { toast } = useToast();
+  const [brand, setBrand] = useState<Brand | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchBrand = async () => {
+    const fetchBrand = async (): Promise<void> => {
       try {
-        const response = await fetch(`/api/admin/brands/${params?.id}`)
-        if (response.ok) {
-          const data = await response.json()
-          setBrand(data)
-        } else {
-          throw new Error("Failed to fetch brand")
+        if (!params.id) {
+          throw new Error("Brand ID not found");
         }
+
+        const response = await axios.get<Brand>(
+          `/api/admin/brands/${params.id}`
+        );
+        setBrand(response.data);
       } catch (error) {
+        const errorMessage =
+          axios.isAxiosError(error) && error.response?.data?.message
+            ? String(error.response.data.message)
+            : "Failed to fetch brand";
         toast({
           title: "Error",
-          description: "Failed to fetch brand",
+          description: errorMessage,
           variant: "destructive",
-        })
+        });
+        router.push("/admin/brands");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    if (params.id) {
-      fetchBrand()
-    }
-  }, [params.id, toast])
+    fetchBrand();
+  }, [params.id, router, toast]);
 
   if (loading) {
-  return (
-    <div className="flex h-[60vh] w-full flex-col items-center justify-center gap-2">
-      <Loader2Icon className="h-10 w-10 animate-spin text-primary" />
-      <p className="text-sm font-medium text-muted-foreground">Loading brands...</p>
-    </div>
-  )
-}
+    return (
+      <div className="flex h-[60vh] w-full flex-col items-center justify-center gap-2">
+        <Loader2Icon className="h-10 w-10 animate-spin text-primary" />
+        <p className="text-sm font-medium text-muted-foreground">
+          Loading brand...
+        </p>
+      </div>
+    );
+  }
 
   if (!brand) {
-    return <div>Brand not found</div>
+    return (
+      <div className="space-y-6 px-2 py-4">
+        <div>
+          <h1 className="text-4xl font-bold">Brand Not Found</h1>
+          <p className="text-muted-foreground">The brand you are looking for does not exist</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6 px-2 py-4">
       <div>
-        <h1 className="text-3xl font-bold">Edit Brand</h1>
+        <h1 className="text-4xl font-bold">Edit Brand</h1>
         <p className="text-muted-foreground">Update brand information</p>
       </div>
-      <BrandForm brand={brand} isEdit />
+      <BrandForm brand={brand} isEdit={true} />
     </div>
-  )
+  );
 }
