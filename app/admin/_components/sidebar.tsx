@@ -14,6 +14,7 @@ import {
   AlignJustify,
   ShoppingCart,
   FolderTree,
+  BriefcaseBusiness,
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -126,6 +127,26 @@ const menuData: MenuSection[] = [
         ],
       },
 
+
+         {
+        id: "brands",
+        label: "Brands",
+        icon: BriefcaseBusiness,
+        children: [
+          {
+            id: "all-brands",
+            label: "All Brands",
+            href: "/admin/brands/",
+            icon: AlignJustify,
+          },
+          {
+            id: "add-new-brand",
+            label: "Add New Brand",
+            href: "/admin/brands/add",
+            icon: Plus,
+          },
+        ],
+      },
       
     ],
   },
