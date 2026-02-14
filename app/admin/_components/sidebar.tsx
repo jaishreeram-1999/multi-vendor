@@ -15,6 +15,7 @@ import {
   ShoppingCart,
   FolderTree,
   BriefcaseBusiness,
+  Layers2Icon,
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -99,10 +100,22 @@ const menuData: MenuSection[] = [
         icon: ShoppingCart,
         children: [
           {
+            id: "recent-products",
+            label: "Recent Products",
+            href: "/admin/products/",
+            icon: Layers2Icon,
+          },
+           {
             id: "all-products",
             label: "All Products",
-            href: "/admin/products/",
+            href: "/admin/products/all",
             icon: AlignJustify,
+          },
+           {
+            id: "add-product",
+            label: "Add Product",
+            href: "/admin/products/add",
+            icon: Plus,
           },
         ],
       },

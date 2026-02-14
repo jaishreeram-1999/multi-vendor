@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
       { status: 201 },
     );
   } catch (err: unknown) {
-    // Check if it's a Mongoose duplicate key error
+  
     console.error("[CATEGORIES_POST]", err);
 
     if (
