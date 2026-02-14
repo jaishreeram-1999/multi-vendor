@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { BrandForm } from "../../_components/brand-form"
 import { useToast } from "@/hooks/use-toast"
+import { Loader2Icon } from "lucide-react"
 
 interface Brand {
   _id: string
@@ -46,8 +47,13 @@ export default function EditBrandPage() {
   }, [params.id, toast])
 
   if (loading) {
-    return <div>Loading...</div>
-  }
+  return (
+    <div className="flex h-[60vh] w-full flex-col items-center justify-center gap-2">
+      <Loader2Icon className="h-10 w-10 animate-spin text-primary" />
+      <p className="text-sm font-medium text-muted-foreground">Loading brands...</p>
+    </div>
+  )
+}
 
   if (!brand) {
     return <div>Brand not found</div>

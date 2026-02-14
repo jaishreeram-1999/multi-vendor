@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Loader2Icon } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -121,11 +122,14 @@ export default function BrandsPage() {
     brand.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-32">Loading...</div>
-    );
-  }
+    if (loading) {
+  return (
+    <div className="flex h-[60vh] w-full flex-col items-center justify-center gap-2">
+      <Loader2Icon className="h-10 w-10 animate-spin text-primary" />
+      <p className="text-sm font-medium text-muted-foreground">Loading brands...</p>
+    </div>
+  )
+}
 
   return (
     <div className="space-y-6 p-2">
