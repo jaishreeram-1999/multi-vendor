@@ -12,7 +12,6 @@ const CategorySchema = new Schema<ICategory>(
     slug: {
       type: String,
       unique: true,
-      index: true,
       lowercase: true,
       trim: true,
     },
@@ -88,7 +87,6 @@ const CategorySchema = new Schema<ICategory>(
 
 CategorySchema.index({ parentId: 1, sortOrder: 1 });
 CategorySchema.index({ "ancestors._id": 1 });
-CategorySchema.index({ slug: 1 });
 
 /* ============================= */
 /* Pre-save Hook (Modern Style) */

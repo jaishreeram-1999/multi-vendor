@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -98,7 +98,7 @@ export default function BlogsAdminPage() {
       const response = await fetch(
         `/api/admin/blog?page=${pagination.page}&limit=${pagination.limit}${
           searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : ""
-        }`
+        }`,
       );
 
       if (!response.ok) throw new Error("Failed to fetch blogs");
@@ -106,7 +106,7 @@ export default function BlogsAdminPage() {
 
       setBlogs(data.blogs || []);
       setPagination(
-        data.pagination || { total: 0, page: 1, limit: 10, totalPages: 0 }
+        data.pagination || { total: 0, page: 1, limit: 10, totalPages: 0 },
       );
     } catch (error) {
       console.error("Error fetching blogs:", error);
@@ -121,7 +121,20 @@ export default function BlogsAdminPage() {
   }, [pagination.page, pagination.limit, searchTerm, toast]);
 
   // ✅ Debounce search to reduce API calls
-  const debouncedFetch = useCallback(debounce(fetchBlogs, 400), [fetchBlogs]);
+  const debouncedFetch = useMemo(
+    () =>
+      debounce(() => {
+        fetchBlogs();
+      }, 400),
+    [fetchBlogs], // Jab fetchBlogs badlega, tabhi naya debounce banega
+  );
+
+  // cleanup zaroori hai taaki component unmount hone par pending calls cancel ho jayein
+  useEffect(() => {
+    return () => {
+      debouncedFetch.cancel();
+    };
+  }, [debouncedFetch]);
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -239,10 +252,7 @@ export default function BlogsAdminPage() {
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8">
                   <p className="text-gray-500">No blog posts found</p>
-                  <Link
-                    href="/admin/blog/add"
-                    className="mt-2 inline-block"
-                  >
+                  <Link href="/admin/blog/add" className="mt-2 inline-block">
                     <Button variant="link" className="text-amber-700">
                       Create your first blog post
                     </Button>
@@ -386,7 +396,10 @@ export default function BlogsAdminPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+            >
               Cancel
             </Button>
             <Button variant="destructive" onClick={confirmDelete}>

@@ -105,13 +105,13 @@ const menuData: MenuSection[] = [
             href: "/admin/products/",
             icon: Layers2Icon,
           },
-           {
+          {
             id: "all-products",
             label: "All Products",
             href: "/admin/products/all",
             icon: AlignJustify,
           },
-           {
+          {
             id: "add-product",
             label: "Add Product",
             href: "/admin/products/add",
@@ -119,7 +119,7 @@ const menuData: MenuSection[] = [
           },
         ],
       },
-      
+
       {
         id: "categories",
         label: "Categories",
@@ -140,8 +140,7 @@ const menuData: MenuSection[] = [
         ],
       },
 
-
-         {
+      {
         id: "brands",
         label: "Brands",
         icon: BriefcaseBusiness,
@@ -160,7 +159,6 @@ const menuData: MenuSection[] = [
           },
         ],
       },
-      
     ],
   },
 
@@ -186,44 +184,45 @@ const menuData: MenuSection[] = [
             href: "/admin/blog/add",
             icon: Plus,
           },
-        ],
-      },
-      {
-        id: "blogcategories",
-        label: "Blogs Category",
-        icon: LayoutGridIcon,
-        children: [
           {
-            id: "blogcategories",
-            label: "All Category",
+            id: "blog-categories-group",
+            label: "Blogs Category",
             href: "/admin/blog/categories",
-            icon: AlignJustify,
+            icon: LayoutGridIcon,
+            children: [
+              {
+                id: "blog-categories-all",
+                label: "All Category",
+                href: "/admin/blog/categories",
+                icon: AlignJustify,
+              },
+              {
+                id: "blog-categories-add",
+                label: "Add Category",
+                href: "/admin/blog/categories/add",
+                icon: Plus,
+              },
+            ],
           },
           {
-            id: "blogcategories",
-            label: "Add Category",
-            href: "/admin/blog/categories/add",
-            icon: Plus,
-          },
-        ],
-      },
-      {
-        id: "blog-reviews",
-        label: "Blog Reviews",
-
-        icon: MessageSquare,
-        children: [
-          {
-            id: "all-blog-reviews",
-            label: "All Review",
+            id: "blog-reviews",
+            label: "Blog Reviews",
             href: "/admin/blog/reviews",
-            icon: AlignJustify,
-          },
-          {
-            id: "new-blog-reviews",
-            label: "Add New Review",
-            href: "/admin/blog/reviews/add",
-            icon: Plus,
+            icon: MessageSquare,
+            children: [
+              {
+                id: "all-blog-reviews",
+                label: "All Review",
+                href: "/admin/blog/reviews",
+                icon: AlignJustify,
+              },
+              {
+                id: "new-blog-reviews",
+                label: "Add New Review",
+                href: "/admin/blog/reviews/add",
+                icon: Plus,
+              },
+            ],
           },
         ],
       },

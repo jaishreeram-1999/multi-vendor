@@ -27,9 +27,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} antialiased`}  
     >
-      <body>
+      <body suppressHydrationWarning={true}>
       <NextAuthSessionProvider >
         {children}
           <Toaster /> {/* Global toast provider */}

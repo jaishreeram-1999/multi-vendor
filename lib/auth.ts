@@ -1,13 +1,11 @@
 import type { NextAuthOptions } from "next-auth";
-import type { Session } from "next-auth";
-import type { JWT } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { connectDB } from "@/lib/mongodb";
 import bcrypt from "bcryptjs";
 import { User } from "@/models/User";
 
 export const authOptions = {
-  debug: process.env.NODE_ENV === "development",
+  debug: true,
 
   providers: [
     CredentialsProvider({
