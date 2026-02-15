@@ -5,8 +5,8 @@ import axios from "axios";
 import { useParams, useRouter } from "next/navigation";
 import { BrandForm } from "../../_components/brand-form";
 import { useToast } from "@/hooks/use-toast";
-import type { Brand } from "@/types/brands.types";
 import { Loader2Icon } from "lucide-react";
+import { Brand } from "@/lib/schemas/brands.schema";
 
 export default function EditBrandPage(): React.JSX.Element {
   const params = useParams<{ id: string }>();

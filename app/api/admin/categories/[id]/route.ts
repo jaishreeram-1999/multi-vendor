@@ -1,8 +1,8 @@
 import { connectDB } from "@/lib/mongodb";
 import { Category } from "@/models/Category";
-import { CategoryFormData } from "@/types/category.types";
 import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
+import { CategoryFormData } from "@/lib/schemas/category.schema";
 
 export async function GET(
   request: NextRequest,

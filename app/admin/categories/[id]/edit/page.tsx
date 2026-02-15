@@ -5,9 +5,9 @@ import axios from "axios";
 import { useParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { CategoryForm } from "@/app/admin/categories/_components/CategoryForm";
-import { ICategory } from "@/types/category.types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
+import { ICategory } from "@/lib/schemas/category.schema";
 
 
 

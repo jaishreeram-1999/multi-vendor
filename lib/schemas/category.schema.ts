@@ -1,4 +1,9 @@
 import { z } from "zod";
+import { Types, HydratedDocument } from "mongoose";
+
+// ==========================================
+// 1. CATEGORY ZOD SCHEMA (Frontend & Backend Validation)
+// ==========================================
 
 export const categoryFormSchema = z.object({
   name: z.string()
@@ -24,10 +29,10 @@ export const categoryFormSchema = z.object({
     .nullable()
     .transform((val) => (val === "none" || val === "" || val === "null" ? null : val)),
   
- sortOrder: z.number()
-  .int()
-  .min(0)
-  .default(0),
+  sortOrder: z.number()
+    .int()
+    .min(0)
+    .default(0),
   
   metaTitle: z.string()
     .max(60, "Meta title must be less than 60 characters")
@@ -42,4 +47,66 @@ export const categoryFormSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
-export type CategoryFormType = z.input<typeof categoryFormSchema>;
+/**
+ * CategoryFormData: Isko hum Zod se hi nikal rahe hain.
+ * 'z.input' use kiya hai kyunki parentId frontend par string hoti hai.
+ */
+export type CategoryFormData = z.input<typeof categoryFormSchema>;
+
+
+// ==========================================
+// 2. MONGOOSE & DB INTERFACES
+// ==========================================
+
+export interface IAncestor {
+  _id: Types.ObjectId;
+  name: string;
+  slug: string;
+}
+
+export interface ICategory {
+  _id: Types.ObjectId;
+  name: string;
+  slug: string;
+  description?: string;
+  image?: string;
+  parentId?: Types.ObjectId | null;
+  ancestors: IAncestor[];
+  level: number;
+  sortOrder: number;
+  isActive: boolean;
+  metaTitle?: string;
+  metaDescription?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+/**
+ * CategoryDocument: Backend controllers/models mein use ke liye.
+ */
+export type CategoryDocument = HydratedDocument<ICategory>;
+
+
+// ==========================================
+// 3. API RESPONSE TYPES
+// ==========================================
+
+export interface CategoryResponse {
+  success: boolean;
+  data: ICategory | null;
+  message?: string;
+}
+
+export interface CategoryListResponse {
+  success: boolean;
+  data: ICategory[];
+  total: number;
+}
+
+/**
+ * CategoryFormProps: Form Component ke liye props.
+ */
+export interface CategoryFormProps {
+  initialData?: Partial<ICategory>; // DB se aane wala data
+  isEdit?: boolean;
+}

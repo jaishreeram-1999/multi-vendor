@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { Loader2, Trash2, Edit2, Plus, Eye, ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
-import { ICategory } from "@/types/category.types";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -42,6 +41,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ICategory } from "@/lib/schemas/category.schema";
 
 interface CategoriesTableProps {
   categories: ICategory[];

@@ -16,10 +16,10 @@ import {
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 import {
+  CategoryFormData,
   categoryFormSchema,
-  CategoryFormType,
+  ICategory
 } from "@/lib/schemas/category.schema";
-import { ICategory } from "@/types/category.types";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -82,7 +82,7 @@ export function CategoryForm({ categoryId, initialData }: CategoryFormProps) {
   const [parentCategories, setParentCategories] = useState<ICategory[]>([]);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  const form = useForm<CategoryFormType>({
+  const form = useForm<CategoryFormData>({
     resolver: zodResolver(categoryFormSchema),
     defaultValues: initialData
       ? {
@@ -158,7 +158,7 @@ export function CategoryForm({ categoryId, initialData }: CategoryFormProps) {
     fetchParentCategories();
   }, [categoryId, toast]);
 
-  const onSubmit = async (values: CategoryFormType) => {
+  const onSubmit = async (values: CategoryFormData) => {
     try {
       setIsSubmitting(true);
 

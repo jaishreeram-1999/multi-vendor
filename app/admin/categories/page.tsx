@@ -1,19 +1,9 @@
-// import { CategoriesContainer } from "@/app/admin/categories/_components/CategoriesContainer";
-
-// export default function CategoriesPage() {
-//   return (
-//     <div className="p-2">
-//
-//       <CategoriesContainer />
-//     </div>
-//   );
-// }
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react"; // 1. useCallback add kiya
 import axios from "axios";
 import { CategoriesTable } from "@/app/admin/categories/_components/CategoriesTable";
-import { ICategory } from "@/types/category.types";
+import { ICategory } from "@/lib/schemas/category.schema";
 
 interface FilterState {
   search: string;
@@ -41,14 +31,15 @@ export default function CategoriesPage() {
     total: 0,
   });
 
-  const fetchCategories = async (page = 1) => {
+  // 2. fetchCategories ko useCallback mein wrap kiya
+  // Isse ye function tabhi recreate hoga jab 'filters' badlenge
+  const fetchCategories = useCallback(async (page = 1) => {
     try {
       setIsLoading(true);
       const params = new URLSearchParams();
       params.append("page", page.toString());
       params.append("limit", "10");
 
-      // Add filters to request
       if (filters.search) params.append("search", filters.search);
       if (filters.level) params.append("level", filters.level);
       if (filters.isActive) params.append("isActive", filters.isActive);
@@ -70,17 +61,12 @@ export default function CategoriesPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [filters]); // Dependency array mein 'filters' zaroori hai
 
-  // Fetch on mount
+  // 3. Mount aur Filter change dono ko ek hi useEffect handle kar lega
   useEffect(() => {
     fetchCategories(1);
-  }, []);
-
-  // Fetch when filters change
-  useEffect(() => {
-    fetchCategories(1);
-  }, [filters]);
+  }, [fetchCategories]); 
 
   const handleFilterChange = (newFilters: FilterState) => {
     setFilters(newFilters);
@@ -115,7 +101,6 @@ export default function CategoriesPage() {
         onPageChange={handlePageChange}
         onFilterChange={handleFilterChange}
       />
-      
     </div>
   );
 }

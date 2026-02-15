@@ -4,6 +4,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Loader2Icon } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Search, X } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -25,7 +27,8 @@ import { useToast } from "@/hooks/use-toast";
 import { DeleteAlertDialog } from "./_components/delete-alert-dialog";
 import Link from "next/link";
 import Image from "next/image";
-import type { Brand, BrandListResponse } from "@/types/brands.types";
+import { Brand, BrandListResponse } from "@/lib/schemas/brands.schema";
+
 
 export default function BrandsPage(): React.ReactElement {
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -41,51 +44,48 @@ export default function BrandsPage(): React.ReactElement {
     open: boolean;
     brand: Brand | null;
   }>({ open: false, brand: null });
-  const handleSearch = (e: React.FormEvent<HTMLFormElement>): void => {
-    e.preventDefault();
-    setSearchQuery(searchInput);
-    setPage(1);
-  };
 
-
-// 1. fetchBrands ko useCallback mein wrap karein
-const fetchBrands = useCallback(async (): Promise<void> => {
-  setLoading(true);
-  try {
-    const response = await axios.get<BrandListResponse>(
-      "/api/admin/brands",
-      {
+  const fetchBrands = useCallback(async (): Promise<void> => {
+    setLoading(true);
+    try {
+      const response = await axios.get<BrandListResponse>("/api/admin/brands", {
         params: {
           page,
           limit,
           search: searchQuery,
         },
-      }
-    );
-    setBrands(response.data.brands);
-    setTotalPages(response.data.totalPages);
-  } catch (error) {
-    const errorMessage =
-      axios.isAxiosError(error) && error.response?.data?.message
-        ? String(error.response.data.message)
-        : "Failed to fetch brands";
-    toast({
-      title: "Error",
-      description: errorMessage,
-      variant: "destructive",
-    });
-  } finally {
-    setLoading(false);
-  }
-}, [page, limit, searchQuery, toast]); // Saari values jinpe function depend karta hai
+      });
+      setBrands(response.data.brands);
+      setTotalPages(response.data.totalPages);
+    } catch (error) {
+      const errorMessage =
+        axios.isAxiosError(error) && error.response?.data?.message
+          ? String(error.response.data.message)
+          : "Failed to fetch brands";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [page, limit, searchQuery, toast]);
 
-// 2. useEffect ab sirf fetchBrands pe depend karega
-useEffect(() => {
-  fetchBrands();
-}, [fetchBrands]); // Clean and safe dependency
+  useEffect(() => {
+    fetchBrands();
+  }, [fetchBrands]);
 
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setSearchQuery(searchInput);
+      setPage(1);
+    }, 500);
 
- 
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchInput]);
 
   const handleDelete = async (): Promise<void> => {
     if (!deleteDialog.brand?._id) return;
@@ -141,37 +141,33 @@ useEffect(() => {
       <Card>
         <CardHeader>
           <CardTitle>All Brands</CardTitle>
-          <CardDescription>
-            A list of all brands in your store
-          </CardDescription>
+          <CardDescription>A list of all brands in your store</CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Search Section */}
-          <form onSubmit={handleSearch} className="mb-4 flex gap-2">
-            <input
-              type="text"
-              placeholder="Search brand name..."
+          
+          <div className="mb-4 relative max-w-sm group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+
+            <Input
+              placeholder="Search brands..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md w-full max-w-sm text-sm"
+              className="pl-10 pr-10"
             />
-            <Button type="submit" variant="default">
-              Search
-            </Button>
-            {/* Clear Button */}
-            {searchQuery && (
-              <Button
+
+            {searchInput && (
+              <button
                 type="button"
-                variant="ghost"
                 onClick={() => {
                   setSearchInput("");
                   setSearchQuery("");
                 }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
               >
-                Clear
-              </Button>
+                <X className="h-4 w-4" />
+              </button>
             )}
-          </form>
+          </div>
 
           <Table>
             <TableHeader>
@@ -206,9 +202,7 @@ useEffect(() => {
                     <TableCell className="font-medium">{brand.name}</TableCell>
                     <TableCell>{brand.description}</TableCell>
                     <TableCell>
-                      <Badge
-                        variant={brand.isActive ? "default" : "secondary"}
-                      >
+                      <Badge variant={brand.isActive ? "default" : "secondary"}>
                         {brand.isActive ? "Active" : "Inactive"}
                       </Badge>
                     </TableCell>
@@ -227,9 +221,7 @@ useEffect(() => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() =>
-                            setDeleteDialog({ open: true, brand })
-                          }
+                          onClick={() => setDeleteDialog({ open: true, brand })}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

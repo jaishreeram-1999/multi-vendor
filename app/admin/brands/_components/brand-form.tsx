@@ -1,6 +1,6 @@
 "use client";
 
-import type React from "react";
+
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -29,8 +29,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Upload, X } from "lucide-react";
 import Image from "next/image";
 import {
-  brandFormSchema, type BrandFormSchema,} from "@/lib/schemas/brands.schemas";
-import type {  BrandFormProps } from "@/types/brands.types";
+  brandFormSchema, type BrandFormSchema,type BrandFormProps,} from "@/lib/schemas/brands.schema";
+
+  
 
 export function BrandForm({ brand, isEdit = false }: BrandFormProps) {
   const [uploading, setUploading] = useState(false);
@@ -38,7 +39,7 @@ export function BrandForm({ brand, isEdit = false }: BrandFormProps) {
   const router = useRouter();
   const { toast } = useToast();
 
-  const form = useForm<BrandFormSchema>({
+  const form = useForm({
     resolver: zodResolver(brandFormSchema),
     defaultValues: {
       name: brand?.name || "",
