@@ -35,4 +35,15 @@ const BlogSchema = new Schema<IBlog>(
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } },
 )
 
+BlogSchema.pre("save", function () {
+  if (!this.meta_title || this.meta_title.trim() === "") {
+    this.meta_title = this.title;
+  }
+
+  if (!this.meta_description || this.meta_description.trim() === "") {
+    this.meta_description =
+      this.excerpt || this.content.substring(0, 160);
+  }
+});
+
 export const Blog = mongoose.models.Blog || mongoose.model<IBlog>("Blog", BlogSchema)

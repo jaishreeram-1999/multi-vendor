@@ -1,18 +1,13 @@
-"use client";
+'use client'
 
-import { useState, useEffect, useCallback, useMemo } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import {
-  Plus,
-  Edit,
-  Trash2,
-  Search,
-  RefreshCw,
-  MoreHorizontal,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import Link from 'next/link'
+import Image from 'next/image'
+import { useRouter } from 'next/navigation'
+import axios, { AxiosError } from 'axios'
+import { Plus, Edit, Trash2, Search, RefreshCw, MoreHorizontal, Loader2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   Table,
   TableBody,
@@ -20,14 +15,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
+} from '@/components/ui/dropdown-menu'
+import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
   DialogContent,
@@ -35,183 +30,182 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
-import { useSession } from "next-auth/react";
-import { debounce } from "lodash";
+} from '@/components/ui/dialog'
+import { useToast } from '@/hooks/use-toast'
+import { useSession } from 'next-auth/react'
+import { type BlogsListResponse, type BlogApiResponse } from '@/lib/schemas/blog.schema'
 
-interface Blog {
-  _id: string;
-  title: string;
-  slug: string;
-  excerpt: string;
-  featured_image: string;
-  author: string;
-  categories: string[];
-  tags: string[];
-  published: boolean;
-  publish_date: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface PaginationData {
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-// Helper: format date
-const formatDate = (dateString: string | Date | null | undefined): string => {
-  if (!dateString) return "N/A";
-  const date = new Date(dateString);
+const formatDate = (dateString: string | null | undefined): string => {
+  if (!dateString) return 'N/A'
+  const date = new Date(dateString)
   return isNaN(date.getTime())
-    ? "Invalid Date"
-    : date.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-};
+    ? 'Invalid Date'
+    : date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      })
+}
+
+const debounce = <T extends (...args: unknown[]) => unknown>(
+  func: T,
+  wait: number,
+) => {
+  let timeout: NodeJS.Timeout | null = null
+
+  const debounced = (...args: unknown[]) => {
+    if (timeout) clearTimeout(timeout)
+    timeout = setTimeout(() => {
+      func(...args)
+      timeout = null
+    }, wait)
+  }
+
+  debounced.cancel = () => {
+    if (timeout) clearTimeout(timeout)
+    timeout = null
+  }
+
+  return debounced as T & { cancel: () => void }
+}
 
 export default function BlogsAdminPage() {
-  const { status } = useSession();
-  const { toast } = useToast();
+  const router = useRouter()
+  const { status } = useSession()
+  const { toast } = useToast()
 
-  const [blogs, setBlogs] = useState<Blog[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [pagination, setPagination] = useState<PaginationData>({
-    total: 0,
-    page: 1,
-    limit: 10,
-    totalPages: 0,
-  });
-  const [searchTerm, setSearchTerm] = useState("");
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [blogToDelete, setBlogToDelete] = useState<Blog | null>(null);
+  const [blogs, setBlogs] = useState<BlogApiResponse[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [limit] = useState(10)
+  const [total, setTotal] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [blogToDelete, setBlogToDelete] = useState<BlogApiResponse | null>(null)
 
-  // Fetch blogs
   const fetchBlogs = useCallback(async () => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
-      const response = await fetch(
-        `/api/admin/blog?page=${pagination.page}&limit=${pagination.limit}${
-          searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : ""
-        }`,
-      );
+      const { data } = await axios.get<BlogsListResponse>('/api/admin/blog', {
+        params: {
+          page,
+          limit,
+          ...(searchTerm && { search: searchTerm }),
+        },
+      })
 
-      if (!response.ok) throw new Error("Failed to fetch blogs");
-      const data = await response.json();
-
-      setBlogs(data.blogs || []);
-      setPagination(
-        data.pagination || { total: 0, page: 1, limit: 10, totalPages: 0 },
-      );
+      setBlogs(data.blogs)
+      setTotal(data.pagination.total)
+      setTotalPages(data.pagination.totalPages)
     } catch (error) {
-      console.error("Error fetching blogs:", error);
+      console.error('Error fetching blogs:', error)
       toast({
-        title: "Error",
-        description: "Failed to fetch blogs",
-        variant: "destructive",
-      });
+        title: 'Error',
+        description: 'Failed to fetch blogs',
+        variant: 'destructive',
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }, [pagination.page, pagination.limit, searchTerm, toast]);
+  }, [page, limit, searchTerm, toast])
 
-  // ✅ Debounce search to reduce API calls
   const debouncedFetch = useMemo(
     () =>
       debounce(() => {
-        fetchBlogs();
+        fetchBlogs()
       }, 400),
-    [fetchBlogs], // Jab fetchBlogs badlega, tabhi naya debounce banega
-  );
+    [fetchBlogs],
+  )
 
-  // cleanup zaroori hai taaki component unmount hone par pending calls cancel ho jayein
   useEffect(() => {
     return () => {
-      debouncedFetch.cancel();
-    };
-  }, [debouncedFetch]);
+      debouncedFetch.cancel()
+    }
+  }, [debouncedFetch])
 
   useEffect(() => {
-    if (status === "authenticated") {
-      debouncedFetch();
-    } else if (status === "unauthenticated") {
-      window.location.href = "/login?redirect=/admin/blogs";
+    if (status === 'authenticated') {
+      debouncedFetch()
+    } else if (status === 'unauthenticated') {
+      router.push('/login?redirect=/admin/blog')
     }
-  }, [status, pagination.page, pagination.limit, searchTerm, debouncedFetch]);
+  }, [status, page, searchTerm, debouncedFetch, router])
 
   const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPagination((prev) => ({ ...prev, page: 1 }));
-    fetchBlogs(); // ✅ call fetch manually
-  };
+    e.preventDefault()
+    setPage(1)
+    debouncedFetch()
+  }
 
   const handleReset = () => {
-    setSearchTerm("");
-    setPagination((prev) => ({ ...prev, page: 1 }));
-    fetchBlogs();
-  };
+    setSearchTerm('')
+    setPage(1)
+    debouncedFetch()
+  }
 
-  const handleDeleteClick = (blog: Blog) => {
-    setBlogToDelete(blog);
-    setDeleteDialogOpen(true);
-  };
+  const handleDeleteClick = (blog: BlogApiResponse) => {
+    setBlogToDelete(blog)
+    setDeleteDialogOpen(true)
+  }
 
   const confirmDelete = async () => {
-    if (!blogToDelete) return;
+    if (!blogToDelete) return
 
     try {
-      const response = await fetch(`/api/admin/blog/${blogToDelete.slug}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) throw new Error("Failed to delete blog");
+      await axios.delete(`/api/admin/blog/${blogToDelete.slug}`)
 
       toast({
-        title: "Deleted",
-        description: "Blog deleted successfully",
-        variant: "destructive",
-      });
+        title: 'Deleted',
+        description: 'Blog deleted successfully',
+      })
 
-      fetchBlogs();
+      fetchBlogs()
     } catch (error) {
-      console.error("Error deleting blog:", error);
+      console.error('Error deleting blog:', error)
+      const axiosError = error as AxiosError<{ message?: string }>
+      const message =
+        axiosError.response?.data?.message || 'Failed to delete blog'
       toast({
-        title: "Error",
-        description: "Failed to delete blog",
-        variant: "destructive",
-      });
+        title: 'Error',
+        description: message,
+        variant: 'destructive',
+      })
     } finally {
-      setDeleteDialogOpen(false);
-      setBlogToDelete(null);
+      setDeleteDialogOpen(false)
+      setBlogToDelete(null)
     }
-  };
+  }
+
+  if (status === 'loading') {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
+      </div>
+    )
+  }
 
   return (
-    <div className="container mx-auto py-4 space-y-6  ">
+    <div className="container mx-auto py-4 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Blog Posts</h1>
         <Link href="/admin/blog/add">
-          <Button className="bg-black text-white hover:bg-black/80   ">
+          <Button className="bg-teal-600 hover:bg-teal-700 text-white">
             <Plus className="h-4 w-4 mr-2" />
             Add New Post
           </Button>
         </Link>
       </div>
 
-      {/* 🔍 Search section */}
+      {/* Search section */}
       <div className="flex flex-col sm:flex-row gap-4">
         <form onSubmit={handleSearch} className="flex-1 flex gap-2">
           <Input
-            placeholder="Search blogs..."
+            placeholder="Search blogs by title, author, or slug..."
             value={searchTerm}
             onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setPagination((prev) => ({ ...prev, page: 1 }));
+              setSearchTerm(e.target.value)
+              setPage(1)
             }}
             className="max-w-md"
           />
@@ -224,27 +218,25 @@ export default function BlogsAdminPage() {
         </form>
       </div>
 
-      {/* 🧾 Blog table */}
-      <div className="bg-white rounded-md shadow mt-6 p-4">
+      {/* Blog table */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-62.5 text-base">Blog Post</TableHead>
-              <TableHead className="text-base">Author</TableHead>
-              <TableHead className="text-base">Categories</TableHead>
-              <TableHead className="text-base">Status</TableHead>
-              <TableHead className="text-base">Published Date</TableHead>
-              <TableHead className="text-base">Created Date</TableHead>
-              <TableHead className="text-base text-right">Actions</TableHead>
+              <TableHead>Blog Post</TableHead>
+              <TableHead>Author</TableHead>
+              <TableHead>Categories</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Published</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8">
-                  <div className="flex justify-center">
-                    <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
-                  </div>
+                  <Loader2 className="h-6 w-6 animate-spin text-gray-400 mx-auto" />
                   <p className="mt-2 text-sm text-gray-500">Loading blogs...</p>
                 </TableCell>
               </TableRow>
@@ -252,8 +244,8 @@ export default function BlogsAdminPage() {
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8">
                   <p className="text-gray-500">No blog posts found</p>
-                  <Link href="/admin/blog/add" className="mt-2 inline-block">
-                    <Button variant="link" className="text-amber-700">
+                  <Link href="/admin/blog/create" className="mt-2 inline-block">
+                    <Button variant="link" className="text-teal-600">
                       Create your first blog post
                     </Button>
                   </Link>
@@ -264,25 +256,22 @@ export default function BlogsAdminPage() {
                 <TableRow key={blog._id}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-3">
-                      <div className="relative h-12 w-12 rounded-md overflow-hidden shrink-0">
+                      <div className="relative h-12 w-12 rounded overflow-hidden shrink-0">
                         <Image
-                          src={blog.featured_image || "/placeholder.svg"}
+                          src={blog.featured_image || '/placeholder.svg'}
                           alt={blog.title}
                           fill
                           className="object-cover"
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div
-                          className="font-medium truncate text-sm"
-                          title={blog.title}
-                        >
+                        <div className="font-medium truncate text-sm">
                           {blog.title}
                         </div>
                         <Link
                           href={`/blog/${blog.slug}`}
                           target="_blank"
-                          className="text-xs text-black hover:underline"
+                          className="text-xs text-teal-600 hover:underline"
                         >
                           View Post
                         </Link>
@@ -300,27 +289,21 @@ export default function BlogsAdminPage() {
                         ))}
                         {blog.categories.length > 2 && (
                           <Badge variant="outline" className="text-xs">
-                            +{blog.categories.length - 2} more
+                            +{blog.categories.length - 2}
                           </Badge>
                         )}
                       </div>
                     ) : (
-                      <span className="text-gray-500 text-sm">
-                        Uncategorized
-                      </span>
+                      <span className="text-gray-500 text-sm">Uncategorized</span>
                     )}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={blog.published ? "default" : "secondary"}>
-                      {blog.published ? "Published" : "Draft"}
+                    <Badge variant={blog.published ? 'default' : 'secondary'}>
+                      {blog.published ? 'Published' : 'Draft'}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-sm">
-                    {formatDate(blog.publish_date)}
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {formatDate(blog.created_at)}
-                  </TableCell>
+                  <TableCell className="text-sm">{formatDate(blog.publish_date)}</TableCell>
+                  <TableCell className="text-sm">{formatDate(blog.created_at)}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -352,31 +335,26 @@ export default function BlogsAdminPage() {
         </Table>
 
         {/* Pagination */}
-        {pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-4 border-t mt-4">
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-4 py-4 border-t">
             <div className="text-sm text-gray-500">
-              Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
-              {Math.min(pagination.page * pagination.limit, pagination.total)}{" "}
-              of {pagination.total} results
+              Showing {(page - 1) * limit + 1} to {Math.min(page * limit, total)} of{' '}
+              {total} results
             </div>
-            <div className="flex gap-1">
+            <div className="flex gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() =>
-                  setPagination((prev) => ({ ...prev, page: prev.page - 1 }))
-                }
-                disabled={pagination.page === 1}
+                onClick={() => setPage(Math.max(1, page - 1))}
+                disabled={page === 1}
               >
                 Previous
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() =>
-                  setPagination((prev) => ({ ...prev, page: prev.page + 1 }))
-                }
-                disabled={pagination.page === pagination.totalPages}
+                onClick={() => setPage(Math.min(totalPages, page + 1))}
+                disabled={page === totalPages}
               >
                 Next
               </Button>
@@ -391,15 +369,12 @@ export default function BlogsAdminPage() {
           <DialogHeader>
             <DialogTitle>Delete Blog Post</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete “{blogToDelete?.title}”? This
-              action cannot be undone.
+              Are you sure you want to delete &apos;{blogToDelete?.title}&apos; blog ? This action
+              cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDeleteDialogOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
               Cancel
             </Button>
             <Button variant="destructive" onClick={confirmDelete}>
@@ -409,5 +384,5 @@ export default function BlogsAdminPage() {
         </DialogContent>
       </Dialog>
     </div>
-  );
+  )
 }

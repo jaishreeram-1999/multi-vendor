@@ -21,6 +21,7 @@ export const categoryFormSchema = z.object({
     .default(""),
   
   image: z.string()
+    .nullable()
     .optional()
     .default(""),
   
