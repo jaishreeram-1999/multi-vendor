@@ -1,9 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2, Trash2, Edit2, Plus, Eye, ChevronLeft, ChevronRight, Search, X } from "lucide-react";
+import {
+  Loader2,
+  Trash2,
+  Edit2,
+  Plus,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  X,
+} from "lucide-react";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -50,7 +60,11 @@ interface CategoriesTableProps {
   currentPage?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
-  onFilterChange?: (filters: { search: string; level: string; isActive: string }) => void;
+  onFilterChange?: (filters: {
+    search: string;
+    level: string;
+    isActive: string;
+  }) => void;
 }
 
 export function CategoriesTable({
@@ -70,8 +84,52 @@ export function CategoriesTable({
   const [level, setLevel] = useState("");
   const [isActive, setIsActive] = useState("");
 
-  const handleFilterChange = () => {
-    onFilterChange?.({ search, level, isActive });
+  // useRef ka use karke hum initial mount par search trigger hone se rok sakte hain
+  const isFirstRender = useRef(true);
+
+  // 1. Ek ref banayein search ki pichli value track karne ke liye
+  const prevSearchRef = useRef(search);
+
+  useEffect(() => {
+    // First render skip karein
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      prevSearchRef.current = search; // Sync ref on mount
+      return;
+    }
+
+    // LOGIC: Agar search change nahi hui hai (matlab level ya status change hua hai),
+    // toh hum timer nahi chalayenge kyunki handleSelectChange usse handle kar chuka hai.
+    if (prevSearchRef.current === search) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      onFilterChange?.({ search, level, isActive });
+      prevSearchRef.current = search; // Update ref after trigger
+    }, 800);
+
+    return () => clearTimeout(timer);
+
+    // Ab saare dependencies yahan hain, ESLint error nahi dega
+  }, [search, level, isActive, onFilterChange]);
+
+  // 2. Selects ke liye instant update (Ismein koi badlav nahi, yeh sahi hai)
+  const handleSelectChange = (key: string, value: string) => {
+    const updatedValue = value === "all" ? "" : value;
+
+    const nextLevel = key === "level" ? updatedValue : level;
+    const nextActive = key === "isActive" ? updatedValue : isActive;
+
+    if (key === "level") setLevel(updatedValue);
+    if (key === "isActive") setIsActive(updatedValue);
+
+    // Instant update bina timer ke
+    onFilterChange?.({
+      search,
+      level: nextLevel,
+      isActive: nextActive,
+    });
   };
 
   const handleDelete = async () => {
@@ -176,11 +234,14 @@ export function CategoriesTable({
               </div>
 
               {/* Level Filter */}
-              <div className="w-40">
+              <div className="w-30">
                 <label className="block text-sm font-medium text-foreground mb-2">
                   Level
                 </label>
-                <Select value={level} onValueChange={setLevel}>
+                <Select
+                  value={level}
+                  onValueChange={(val) => handleSelectChange("level", val)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="All levels" />
                   </SelectTrigger>
@@ -196,11 +257,15 @@ export function CategoriesTable({
               </div>
 
               {/* Status Filter */}
-              <div className="w-40">
+              <div className="w-30">
                 <label className="block text-sm font-medium text-foreground mb-2">
                   Status
                 </label>
-                <Select value={isActive} onValueChange={setIsActive}>
+                {/* Yahan 'setIsActive' ki jagah 'handleSelectChange' use karein */}
+                <Select
+                  value={isActive}
+                  onValueChange={(val) => handleSelectChange("isActive", val)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="All statuses" />
                   </SelectTrigger>
@@ -211,11 +276,6 @@ export function CategoriesTable({
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* Apply Button */}
-              <Button onClick={handleFilterChange} variant="default">
-                Apply Filters
-              </Button>
 
               {/* Reset Button */}
               <Button
@@ -243,91 +303,95 @@ export function CategoriesTable({
             <div className="space-y-4">
               <div className="overflow-x-auto">
                 <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Slug</TableHead>
-                    <TableHead>Level</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Sort Order</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {categories.map((category) => (
-                    <TableRow key={category._id?.toString()}>
-                      <TableCell className="font-medium">
-                        <div>
-                          <p className="text-foreground">{category.name}</p>
-                          {category.ancestors &&
-                            category.ancestors.length > 0 && (
-                              <p className="text-xs text-muted-foreground">
-                                {category.ancestors
-                                  .map((a) => a.name)
-                                  .join(" > ")}
-                              </p>
-                            )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm">{category.slug}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">Level {category.level}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        {category.isActive ? (
-                          <Badge variant="default">Active</Badge>
-                        ) : (
-                          <Badge variant="secondary">Inactive</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {category.sortOrder}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Link
-                            href={`/admin/categories/${category._id?.toString()}`}
-                          >
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              title="View details"
-                            >
-                              <Eye className="h-4 w-4" />
-                              <span className="sr-only">View</span>
-                            </Button>
-                          </Link>
-                          <Link
-                            href={`/admin/categories/${category._id?.toString()}/edit`}
-                          >
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              title="Edit category"
-                            >
-                              <Edit2 className="h-4 w-4" />
-                              <span className="sr-only">Edit</span>
-                            </Button>
-                          </Link>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() =>
-                              setDeleteId(category._id?.toString() || "")
-                            }
-                            title="Delete category"
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                            <span className="sr-only">Delete</span>
-                          </Button>
-                        </div>
-                      </TableCell>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Slug</TableHead>
+                      <TableHead>Level</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Sort Order</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
+                  </TableHeader>
+                  <TableBody>
+                    {categories.map((category) => (
+                      <TableRow key={category._id?.toString()}>
+                        <TableCell className="font-medium">
+                          <div>
+                            <p className="text-foreground">{category.name}</p>
+                            {category.ancestors &&
+                              category.ancestors.length > 0 && (
+                                <p className="text-xs text-muted-foreground">
+                                  {category.ancestors
+                                    .map((a) => a.name)
+                                    .join(" > ")}
+                                </p>
+                              )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {category.slug}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            Level {category.level}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {category.isActive ? (
+                            <Badge variant="default">Active</Badge>
+                          ) : (
+                            <Badge variant="secondary">Inactive</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {category.sortOrder}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Link
+                              href={`/admin/categories/${category._id?.toString()}`}
+                            >
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                title="View details"
+                              >
+                                <Eye className="h-4 w-4" />
+                                <span className="sr-only">View</span>
+                              </Button>
+                            </Link>
+                            <Link
+                              href={`/admin/categories/${category._id?.toString()}/edit`}
+                            >
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                title="Edit category"
+                              >
+                                <Edit2 className="h-4 w-4" />
+                                <span className="sr-only">Edit</span>
+                              </Button>
+                            </Link>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() =>
+                                setDeleteId(category._id?.toString() || "")
+                              }
+                              title="Delete category"
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                              <span className="sr-only">Delete</span>
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
                 </Table>
               </div>
-              
+
               {/* Pagination */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-between">

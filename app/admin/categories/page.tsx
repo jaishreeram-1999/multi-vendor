@@ -66,11 +66,14 @@ export default function CategoriesPage() {
   // 3. Mount aur Filter change dono ko ek hi useEffect handle kar lega
   useEffect(() => {
     fetchCategories(1);
-  }, [fetchCategories]); 
+  }, [filters,fetchCategories]); 
 
-  const handleFilterChange = (newFilters: FilterState) => {
-    setFilters(newFilters);
-  };
+ // handleFilterChange ko simple rakhein
+const handleFilterChange = useCallback((newFilters: FilterState) => {
+  setFilters(newFilters);
+  // Hum page 1 par reset kar rahe hain kyunki search badalne par 
+  // purana pagination invalid ho jata hai
+}, []);
 
   const handlePageChange = (page: number) => {
     fetchCategories(page);
